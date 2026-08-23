@@ -2,6 +2,7 @@
 
 Public **example** of a small-circle gated static page:
 
+- **Live demo:** https://hello-circle-demo.vercel.app/
 - Clear HTML lives in `content/index-plaintext.html` (in git for learning).
 - **Vercel serves only `dist/`**, produced by encrypting at build time.
 - Two demo users (passwords below). Enrollment format matches [circle-enroll](https://circle-enroll.vercel.app/).
