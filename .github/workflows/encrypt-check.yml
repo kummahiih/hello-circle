@@ -1,1 +1,43 @@
+name: Encrypt check
 
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  encrypt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Encrypt page
+        run: |
+          node scripts/encrypt-page.mjs \
+            --page-id hello-circle \
+            --content content/index-plaintext.html \
+            --hashes hashes \
+            --out dist
+
+      - name: Assert plaintext not in dist
+        run: |
+          test -f dist/index.html
+          test -f dist/robots.txt
+          if grep -q "Hello, circle" dist/index.html; then
+            echo "ERROR: plaintext marker found inside dist/index.html"
+            exit 1
+          fi
+          grep -q "Kirjaudu" dist/index.html
+          echo "OK: dist is loader-only ciphertext bundle"
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-encrypted
+          path: dist/
