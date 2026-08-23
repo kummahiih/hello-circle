@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "pageId": "hello-circle",
+  "alg": "PBKDF2-SHA256",
+  "iterations": 310000,
+  "hashBytes": 32,
+  "salt": "dhzpQUDpq1FEhUUzBRD1zQ==",
+  "hash": "yRE303IKKRVU1t0j/1yUHDvTflkBAGQoRmQB8e5iGhs=",
+  "created": "2026-08-23T22:50:54.825Z",
+  "label": "alice"
+}

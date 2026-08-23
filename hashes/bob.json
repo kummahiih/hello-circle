@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "pageId": "hello-circle",
+  "alg": "PBKDF2-SHA256",
+  "iterations": 310000,
+  "hashBytes": 32,
+  "salt": "g/Q80fNLh3syNB5sgFbq4g==",
+  "hash": "bRvkKMByyV4BHokRww2enRqZlXhaClG5HZe8fkRkCMs=",
+  "created": "2026-08-23T22:50:55.335Z",
+  "label": "bob"
+}
