@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Kirjaudu</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 24rem; margin: 3rem auto; padding: 0 1rem; }
+    input, button { font-size: 16px; width: 100%; padding: 0.6rem; box-sizing: border-box; }
+    button { margin-top: 0.75rem; cursor: pointer; }
+    .hint { color: #555; font-size: 0.85rem; }
+    .err { color: #b00020; }
+  </style>
+</head>
+<body>
+  <h1>Kirjaudu</h1>
+  <p class="hint">Sivu on salattu (<span id="pid"></span>). Syötä sovittu salasana.</p>
+  <input id="pw" type="password" autocomplete="current-password" placeholder="Salasana" />
+  <button type="button" id="go">Avaa</button>
+  <p id="status" class="hint"></p>
+  <script>
+(function () {
+  var PAGE_ID = "hello-circle";
+  var SHARE1 = "+1bfw71Vx+2CqPuRGpFMqzq7Aw4CGfttR0B8fJwgIf8=";
+  var IV = "SJCo1fje0PsjFMOR";
+  var CIPHER = "fGUIoOHRdjE+L3fjQN6mvyzuQQqpX42co+/tMbcvc5JL0qU+WfG5yOWfI34i/W4DIgKZJVctEyOSxuuYkm6PRho/nyq2tpCpObgZSLt4wdLncMjy3gh7MgshoWXJ86s0TndZupSnAlNHTxNqyug6/kDIz0ji4F79FBRR05TrHUwS9lguHbV26ybykpIcsXLs1fmSZUNJckw1MGiHbT1boZ5Y2bWN5brxR5SutD+kmK+4ZIM24nzk+fFfMKw3g/PfA2A09qNb/KRa7Zgt7oe+V3d/ekaInsm7bpeRWhOxqJLvp3ehNKuiL6HezUDCTRtZhra+eLxD2er7n0ZshqxSGkheci3vySRR9MQqsLDZJKneRVZrAfn7Yr2GnoPjnDYYuv//BcS9zgXQyPgvnJm0GMtXpWU9rV2IconioVNw9AOoB4TK7fGmHAiaJf43Dl9usut8n3bd+AJWZTeGtLb1HgGd2N+9ny+BTmSjvfDrSb1LNPx0tnBe5373JDfRZpEJI9jDy6TVS/wbXkKiCS15MdSGhDrC8sLZWGmDnGlKW1THa28cy3rLkmH5s8vJeTp0HZ+s8IFn0WzbBuReRTIIrttuKiDdGPwGp9Ch30auVB4YWObKOzj67KilwrMK3F3xCenxkxNpbxqUg+hhN5CGN2lfTVACCEOyImLEObaXhRWzEKzqKEcW5MhQxxgxWgWUNQjS7QjMAChuiFtQkyA7MpPbqJKMpWIPAQaf0D6RAO07gB8x6sr7PZFBKpkMwZXdBSocyIpv7u/T8AlHWXUJExQ9zYJiwsVeB+9+wRjZ/kS5g2kW12Eoq4F/qTQ9go7ddux01QMgk/GnQiAI2mwv/esaU2Kt55e3jr8yGFlF/74aqHScOEWq6pKmeLYUTP1ohyh3gnFTLK4iWl5DJoNYdbfTSv8jlPZS1HPc+LBGWUPI9hx0yFEF2F2PvUvPVpCV6XiKYF50s0PJRVnQ5RLgglNLz+/bKLjZXYunE5tcQ0reNPgdv/1o6qGu3hih0lo0D4v9EcI0VVz+145ZMCjpU9Vdihgk9kPZBV1zDc937SGMDuLrGxGfwceEr9X33MWJDw/YOFqj9AsJhuQe2rMIfUI4UbaxE+jWZaAp3HS53l2RySAjXe/9m6/8jCZgqxZ6PjfOCzO7XpblGQm0OMa9sHTnizCWMG7gWfn92moEk2ID/kqbTj6XVtH1KcN3BjZzJi1JsCA3dELLgVluyFmOw2V0rXMd5OUY782NQp4kEr+qS159Fp7e/8iH4UuaPUExawyzQn7/cz7LuojzwttxdU6IgbZgYjis0C+7k1mIPdaKuACugz8Yjir7vG29n+t9tILsNZDBjfx3vJmIgWq0bMgdi7HYUFjlWflAU7k0N8719QrL+z9QUEw8miV/tZLf9oBMvs28uh9sc+szw+lr+v0dxBfyrroKx8d5o7VCvRsYXCtPdLvnetgBbbFlfVbDnoUCmNpG/BjXxQEQBikNO5sS+MSUAtKvxJfqy7PC9bADjIuQl3/XUr7J5MKp7rYVuXG9xlJf7jA0xowqU993zWdA1NDwS/rOhEB4MCLoJO+ChB/OG93yfbpUchNMoJBQxbXrzXhlBn8U7KhYooafeeuOdzbEgoEtfYCjKnHBf+rFfG8UdW32GlfQ/5gEqwaFV8XGNtbkzPujBPMY99xaOB9rPW3pkAztr8cG";
+  var ENTRIES = [{"salt":"dhzpQUDpq1FEhUUzBRD1zQ==","mask":"G8C1cYj3T5NIH1mh8yiv5DDX3edxiMdJIdUpdezDfRg=","label":"alice"},{"salt":"g/Q80fNLh3syNB5sgFbq4g==","mask":"v8pmijqPr9gd1w2Tz3mlZRGdNsYqgvLYeiaU+kbFb8g=","label":"bob"}];
+  var ITER = 310000;
+  document.getElementById("pid").textContent = PAGE_ID;
+
+  function b64ToU8(b64) {
+    var s = atob(b64);
+    var u = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+    return u;
+  }
+  function xorU8(a, b) {
+    var o = new Uint8Array(a.length);
+    for (var i = 0; i < a.length; i++) o[i] = a[i] ^ b[i];
+    return o;
+  }
+  function buildPbkdf2Salt(randomSaltU8, pageId) {
+    var pageBytes = new TextEncoder().encode(pageId);
+    var out = new Uint8Array(randomSaltU8.length + pageBytes.length);
+    out.set(randomSaltU8, 0);
+    out.set(pageBytes, randomSaltU8.length);
+    return out;
+  }
+
+  async function deriveHash(password, saltU8, pageId) {
+    var pbkdf2Salt = buildPbkdf2Salt(saltU8, pageId);
+    var key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+    var bits = await crypto.subtle.deriveBits(
+      { name: "PBKDF2", salt: pbkdf2Salt, iterations: ITER, hash: "SHA-256" },
+      key,
+      256
+    );
+    return new Uint8Array(bits);
+  }
+
+  async function tryUnlock(password) {
+    var share1 = b64ToU8(SHARE1);
+    var iv = b64ToU8(IV);
+    var cipher = b64ToU8(CIPHER);
+    for (var i = 0; i < ENTRIES.length; i++) {
+      var e = ENTRIES[i];
+      var salt = b64ToU8(e.salt);
+      var mask = b64ToU8(e.mask);
+      var hash = await deriveHash(password, salt, PAGE_ID);
+      if (hash.length !== mask.length) continue;
+      var share2 = xorU8(hash, mask);
+      var K = xorU8(share1, share2);
+      try {
+        var key = await crypto.subtle.importKey("raw", K, { name: "AES-GCM" }, false, ["decrypt"]);
+        var plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, cipher);
+        return new TextDecoder().decode(plain);
+      } catch (err) { /* next entry */ }
+    }
+    return null;
+  }
+
+  document.getElementById("go").addEventListener("click", function () {
+    var status = document.getElementById("status");
+    var pw = document.getElementById("pw").value;
+    status.className = "hint";
+    status.textContent = "Avataan…";
+    if (!pw) { status.textContent = "Syötä salasana."; status.className = "hint err"; return; }
+    tryUnlock(pw).then(function (html) {
+      if (!html) {
+        status.textContent = "Virheellinen salasana tai vioittunut data.";
+        status.className = "hint err";
+        return;
+      }
+      document.open();
+      document.write(html);
+      document.close();
+    }).catch(function () {
+      status.textContent = "Purku epäonnistui.";
+      status.className = "hint err";
+    });
+  });
+})();
+  </script>
+</body>
+</html>
