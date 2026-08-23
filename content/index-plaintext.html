@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hello Circle — salainen sisältö</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 36rem;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      line-height: 1.5;
+      color: #122;
+      background: #f7faf7;
+    }
+    h1 { color: #1b5e20; }
+    .box {
+      background: #fff;
+      border: 1px solid #c8e6c9;
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      margin: 1rem 0;
+    }
+    code { background: #e8f5e9; padding: 0.1em 0.35em; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Hello, circle</h1>
+  <p>
+    Näet tämän sivun vain, jos syötit oikean demon salasanan
+    (alice tai bob). Sisältö oli AES-GCM-salattuna loaderin takana.
+  </p>
+  <div class="box">
+    <strong>Esimerkkiviesti</strong>
+    <p style="margin: 0.5rem 0 0">
+      Tämä HTML eli tiedostossa <code>content/index-plaintext.html</code>.
+      Sitä ei julkaista Vercel-deploymentin juureen — vain salattu
+      <code>dist/index.html</code> (loader) deployataan.
+    </p>
+  </div>
+  <p>
+    Julkinen esimerkkirepo:
+    <code>hello-circle</code>
+  </p>
+</body>
+</html>
