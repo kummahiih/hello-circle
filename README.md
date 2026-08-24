@@ -46,6 +46,7 @@ Open `dist/index.html` in a browser, enter a demo password.
 - Client-side gate only: ciphertext + masks are downloadable; weak passwords can be guessed offline.
 - Demo hashes in `hashes/` are public on purpose.
 - For a real circle: keep `hashes/` private, use [circle-enroll](https://github.com/kummahiih/circle-enroll), strong unique passwords.
+- **WebAuthn PRF** is supported by the encrypt script and loader (`alg: "WebAuthn-PRF"`). Enroll the passkey on the **same origin** as this site (or related origins). See the private-circle-page skill.
 
 ## Related
 
