@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Piirisivun salasanarekisteröinti + WebAuthn PRF</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --text: #e7ecf3;
+      --muted: #9aa8bc;
+      --accent: #3d8bfd;
+      --err: #f07178;
+      --border: #2a3544;
+      --ok: #7dcea0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a3050 0%, var(--bg) 55%);
+      color: var(--text);
+      padding: 1.25rem;
+    }
+    main {
+      max-width: 28rem;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.35rem 1.25rem 1.5rem;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+    h1 { font-size: 1.25rem; margin: 0 0 0.35rem; }
+    .lead { color: var(--muted); font-size: 0.9rem; line-height: 1.45; margin: 0 0 1rem; }
+    label { display: block; margin-top: 0.85rem; font-size: 0.8rem; color: var(--muted); }
+    input {
+      width: 100%;
+      margin-top: 0.3rem;
+      padding: 0.65rem 0.7rem;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0d1218;
+      color: var(--text);
+    }
+    input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    .row-btns { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.1rem; }
+    button {
+      width: 100%;
+      padding: 0.7rem;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    #btn-make { background: var(--accent); color: #fff; }
+    #btn-prf { background: #2a5a3a; color: #fff; }
+    #btn-download { background: #243044; color: var(--text); border: 1px solid var(--border); }
+    #btn-copy { background: transparent; color: var(--muted); border: 1px dashed var(--border); font-weight: 500; }
+    .status { margin-top: 0.9rem; font-size: 0.85rem; line-height: 1.4; color: var(--muted); min-height: 1.2em; }
+    .status.err { color: var(--err); }
+    .status.ok { color: var(--ok); }
+    .note {
+      margin-top: 1.1rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    code { font-size: 0.85em; background: #0d1218; padding: 0.1em 0.35em; border-radius: 4px; }
+    .sep { text-align: center; color: var(--muted); font-size: 0.8rem; margin: 0.6rem 0; }
+    .warn {
+      background: #2a2210;
+      border: 1px solid #5a4a20;
+      color: #e0c080;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      margin-top: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Rekisteröi salasana tai passkey piirisivulle</h1>
+    <p class="lead">
+      Materiaalia ei lähetetä verkkoon. Saat JSON-tiedoston (hash),
+      jonka toimitat ylläpitäjälle turvallista kanavaa pitkin.
+      Hash sidotaan sivun tunnisteeseen (<code>pageId</code>).
+    </p>
+
+    <label for="pageId">Sivun tunniste (pageId) *</label>
+    <input id="pageId" type="text" autocomplete="off" placeholder="esim. metsa-piiri" />
+
+    <label for="label">Nimesi / tunniste (valinnainen)</label>
+    <input id="label" type="text" autocomplete="name" placeholder="esim. Matti" />
+
+    <label for="pw">Salasana (PBKDF2) *</label>
+    <input id="pw" type="password" autocomplete="new-password" />
+
+    <label for="pw2">Salasana uudelleen *</label>
+    <input id="pw2" type="password" autocomplete="new-password" />
+
+    <div class="row-btns">
+      <button type="button" id="btn-make">1a. Laske salasana-hash</button>
+      <p class="sep">tai</p>
+      <button type="button" id="btn-prf">1b. Rekisteröi passkey (WebAuthn PRF)</button>
+      <button type="button" id="btn-download" disabled>2. Lataa JSON</button>
+      <button type="button" id="btn-copy" disabled>Kopioi JSON leikepöydälle</button>
+    </div>
+
+    <p id="status" class="status" aria-live="polite"></p>
+
+    <div class="warn">
+      <strong>PRF / passkey-huomio:</strong> Passkey on sidottu tähän origin:iin
+      (<code id="cur-host"></code>). Jotta salattu sivu voi avata samalla passkeyllä,
+      enroll-sivun pitää olla samalla domainilla (tai related origins).
+      Julkinen circle-enroll.vercel.app ei toimi eri domainin gated-sivulle PRF:llä.
+    </div>
+
+    <p class="note">
+      Älä lähetä JSON-tiedostoa tavallisella sähköpostilla, jos voit välttää sen —
+      hash on salainen materiaali. Käytä sovittua turvallista kanavaa.
+      <br /><br />
+      Esitäyttö: <code>?page=metsa-piiri</code>
+    </p>
+  </main>
+
+  <script>
+(function () {
+  var ITER = 310000;
+  var lastPayload = null;
+  var lastFilename = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function setStatus(msg, kind) {
+    var el = $("status");
+    el.textContent = msg || "";
+    el.className = "status" + (kind ? " " + kind : "");
+  }
+
+  function b64(buf) {
+    var bytes = new Uint8Array(buf);
+    var s = "";
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s);
+  }
+
+  function normalizePageId(s) {
+    return String(s || "").trim().toLowerCase().replace(/\s+/g, "-");
+  }
+
+  function buildPbkdf2Salt(randomSaltU8, pageId) {
+    var pageBytes = new TextEncoder().encode(pageId);
+    var out = new Uint8Array(randomSaltU8.length + pageBytes.length);
+    out.set(randomSaltU8, 0);
+    out.set(pageBytes, randomSaltU8.length);
+    return out;
+  }
+
+  function prfSaltForPage(pageId) {
+    return new TextEncoder().encode("circle-prf:v1:" + pageId);
+  }
+
+  function downloadText(filename, text) {
+    var blob = new Blob([text], { type: "application/json;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function enableAfterMake(on) {
+    $("btn-download").disabled = !on;
+    $("btn-copy").disabled = !on;
+  }
+
+  function makeFilename(pageId, label, prefix) {
+    return (prefix || "enroll-") + pageId + "-" + (label ? label.replace(/[^\w\-]+/g, "_") + "-" : "") + Date.now() + ".json";
+  }
+
+  $("cur-host").textContent = location.hostname || "(unknown)";
+
+  var params = new URLSearchParams(window.location.search);
+  if (params.get("page") || params.get("pageId")) {
+    $("pageId").value = params.get("page") || params.get("pageId");
+  }
+
+  $("btn-make").addEventListener("click", function () {
+    lastPayload = null;
+    enableAfterMake(false);
+    var pageId = normalizePageId($("pageId").value);
+    var pw = $("pw").value;
+    var pw2 = $("pw2").value;
+    var label = $("label").value.trim();
+
+    if (!pageId || pageId.length < 2) {
+      setStatus("Anna pageId (vähintään 2 merkkiä).", "err");
+      return;
+    }
+    if (!/^[a-z0-9][a-z0-9._-]*$/.test(pageId)) {
+      setStatus("pageId: vain a-z, 0-9, piste, alaviiva, viiva.", "err");
+      return;
+    }
+    if (!pw || pw.length < 8) {
+      setStatus("Salasanassa vähintään 8 merkkiä.", "err");
+      return;
+    }
+    if (pw !== pw2) {
+      setStatus("Salasanat eivät täsmää.", "err");
+      return;
+    }
+    if (!window.crypto || !crypto.subtle) {
+      setStatus("Selain ei tue Web Crypto API:a.", "err");
+      return;
+    }
+
+    setStatus("Lasketaan PBKDF2 (hetki)…");
+    var randomSalt = crypto.getRandomValues(new Uint8Array(16));
+    var pbkdf2Salt = buildPbkdf2Salt(randomSalt, pageId);
+
+    crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"])
+      .then(function (key) {
+        return crypto.subtle.deriveBits(
+          { name: "PBKDF2", salt: pbkdf2Salt, iterations: ITER, hash: "SHA-256" },
+          key,
+          256
+        );
+      })
+      .then(function (bits) {
+        var obj = {
+          v: 1,
+          pageId: pageId,
+          alg: "PBKDF2-SHA256",
+          iterations: ITER,
+          hashBytes: 32,
+          salt: b64(randomSalt),
+          hash: b64(bits),
+          created: new Date().toISOString()
+        };
+        if (label) obj.label = label;
+        lastPayload = obj;
+        lastFilename = makeFilename(pageId, label);
+        $("pw").value = "";
+        $("pw2").value = "";
+        enableAfterMake(true);
+        setStatus("Valmis (PBKDF2). Lataa JSON tai kopioi. Salasana tyhjennetty.", "ok");
+      })
+      .catch(function (e) {
+        setStatus("Virhe: " + (e && e.message ? e.message : e), "err");
+      });
+  });
+
+  $("btn-prf").addEventListener("click", async function () {
+    lastPayload = null;
+    enableAfterMake(false);
+    var pageId = normalizePageId($("pageId").value);
+    var label = $("label").value.trim();
+
+    if (!pageId || pageId.length < 2) {
+      setStatus("Anna pageId (vähintään 2 merkkiä).", "err");
+      return;
+    }
+    if (!/^[a-z0-9][a-z0-9._-]*$/.test(pageId)) {
+      setStatus("pageId: vain a-z, 0-9, piste, alaviiva, viiva.", "err");
+      return;
+    }
+    if (!window.PublicKeyCredential) {
+      setStatus("Selain ei tue WebAuthn / passkeytä.", "err");
+      return;
+    }
+
+    setStatus("Luodaan passkey ja pyydetään PRF… (vahvista laitteella)");
+
+    try {
+      var salt = prfSaltForPage(pageId);
+      var userId = crypto.getRandomValues(new Uint8Array(16));
+      var challenge = crypto.getRandomValues(new Uint8Array(32));
+
+      var createOpts = {
+        publicKey: {
+          rp: { id: location.hostname, name: "Circle enroll" },
+          user: {
+            id: userId,
+            name: (label || "circle-user") + "@" + pageId,
+            displayName: label || "Circle user"
+          },
+          pubKeyCredParams: [
+            { type: "public-key", alg: -7 },
+            { type: "public-key", alg: -257 }
+          ],
+          authenticatorSelection: {
+            residentKey: "preferred",
+            requireResidentKey: false,
+            userVerification: "preferred"
+          },
+          timeout: 90000,
+          challenge: challenge.buffer,
+          extensions: { prf: { eval: { first: salt } } }
+        }
+      };
+
+      var cred = await navigator.credentials.create(createOpts);
+      if (!cred) throw new Error("Passkey-luonti peruutettiin");
+
+      var prfFirst = null;
+      var ext = cred.getClientExtensionResults();
+      if (ext && ext.prf && ext.prf.results && ext.prf.results.first) {
+        prfFirst = new Uint8Array(ext.prf.results.first);
+      }
+
+      // Many authenticators only return PRF on get(), not create. Do a follow-up get.
+      if (!prfFirst) {
+        setStatus("PRF ei tullut createsta — pyydetään getillä…");
+        var getChallenge = crypto.getRandomValues(new Uint8Array(32));
+        var assertion = await navigator.credentials.get({
+          publicKey: {
+            challenge: getChallenge.buffer,
+            rpId: location.hostname,
+            allowCredentials: [{ type: "public-key", id: cred.rawId }],
+            userVerification: "preferred",
+            timeout: 60000,
+            extensions: { prf: { eval: { first: salt } } }
+          }
+        });
+        if (!assertion) throw new Error("PRF-get peruutettiin");
+        var aext = assertion.getClientExtensionResults();
+        if (!aext || !aext.prf || !aext.prf.results || !aext.prf.results.first) {
+          throw new Error("Authenticator ei palauttanut PRF-tulosta. Tarvitaan PRF-tuki (Chrome 116+, Safari 18+, Firefox 135+ + yhteensopiva authenticator).");
+        }
+        prfFirst = new Uint8Array(aext.prf.results.first);
+      }
+
+      if (prfFirst.length !== 32) {
+        throw new Error("Odottamaton PRF-pituus: " + prfFirst.length);
+      }
+
+      var obj = {
+        v: 1,
+        pageId: pageId,
+        alg: "WebAuthn-PRF",
+        hashBytes: 32,
+        hash: b64(prfFirst),
+        created: new Date().toISOString(),
+        rpId: location.hostname
+      };
+      if (label) obj.label = label;
+
+      lastPayload = obj;
+      lastFilename = makeFilename(pageId, label, "enroll-prf-");
+      enableAfterMake(true);
+      setStatus("Valmis (WebAuthn-PRF). Lataa JSON. Passkey on nyt tällä originilla.", "ok");
+    } catch (e) {
+      setStatus("PRF-virhe: " + (e && e.message ? e.message : e), "err");
+    }
+  });
+
+  $("btn-download").addEventListener("click", function () {
+    if (!lastPayload) return;
+    downloadText(lastFilename, JSON.stringify(lastPayload, null, 2));
+    setStatus("JSON ladattu: " + lastFilename, "ok");
+  });
+
+  $("btn-copy").addEventListener("click", function () {
+    if (!lastPayload) return;
+    var text = JSON.stringify(lastPayload, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        setStatus("JSON kopioitu leikepöydälle.", "ok");
+      }).catch(function () {
+        setStatus("Leikepöytä epäonnistui — käytä latausta.", "err");
+      });
+    } else {
+      setStatus("Leikepöytä ei saatavilla — käytä latausta.", "err");
+    }
+  });
+})();
+  </script>
+</body>
+</html>
