@@ -48,8 +48,15 @@ function loadHashes(dir, pageId) {
   const list = [];
   for (const f of files) {
     const raw = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
-    if (raw.v !== 1 || raw.alg !== 'PBKDF2-SHA256' || !raw.salt || !raw.hash) {
-      throw new Error('invalid enroll file: ' + f);
+    if (raw.v !== 1 || !raw.hash) {
+      throw new Error('invalid enroll file (missing v or hash): ' + f);
+    }
+    const alg = raw.alg || 'PBKDF2-SHA256';
+    if (alg !== 'PBKDF2-SHA256' && alg !== 'WebAuthn-PRF') {
+      throw new Error('unsupported alg in ' + f + ': ' + alg);
+    }
+    if (alg === 'PBKDF2-SHA256' && !raw.salt) {
+      throw new Error('PBKDF2 enroll missing salt: ' + f);
     }
     const filePage = normalizePageId(raw.pageId || '');
     if (!filePage) {
@@ -59,13 +66,18 @@ function loadHashes(dir, pageId) {
       console.warn('skip (pageId mismatch):', f, 'has', filePage, 'expected', pageId);
       continue;
     }
-    if ((raw.iterations || 0) < 310000) {
+    if (alg === 'PBKDF2-SHA256' && (raw.iterations || 0) < 310000) {
       console.warn('warning: iterations < 310000 in', f);
+    }
+    const hashBuf = Buffer.from(raw.hash, 'base64');
+    if (hashBuf.length !== 32) {
+      throw new Error('hash must be 32 bytes: ' + f);
     }
     list.push({
       file: f,
-      salt: Buffer.from(raw.salt, 'base64'),
-      hash: Buffer.from(raw.hash, 'base64'),
+      alg,
+      salt: alg === 'PBKDF2-SHA256' ? Buffer.from(raw.salt, 'base64') : null,
+      hash: hashBuf,
       label: raw.label || f,
       pageId: filePage
     });
@@ -79,6 +91,8 @@ function loadHashes(dir, pageId) {
 function buildLoader({ pageId, share1B64, ivB64, cipherB64, entries }) {
   const entriesJson = JSON.stringify(entries);
   const pageIdJson = JSON.stringify(pageId);
+  const hasPrf = entries.some((e) => e.alg === 'WebAuthn-PRF');
+  const hasPbkdf = entries.some((e) => e.alg === 'PBKDF2-SHA256' || !e.alg);
   return `<!DOCTYPE html>
 <html lang="fi">
 <head>
@@ -92,13 +106,16 @@ function buildLoader({ pageId, share1B64, ivB64, cipherB64, entries }) {
     button { margin-top: 0.75rem; cursor: pointer; }
     .hint { color: #555; font-size: 0.85rem; }
     .err { color: #b00020; }
+    .sep { margin: 1.25rem 0 0.5rem; font-size: 0.8rem; color: #888; text-align: center; }
   </style>
 </head>
 <body>
   <h1>Kirjaudu</h1>
-  <p class="hint">Sivu on salattu (<span id="pid"></span>). Syötä sovittu salasana.</p>
-  <input id="pw" type="password" autocomplete="current-password" placeholder="Salasana" />
-  <button type="button" id="go">Avaa</button>
+  <p class="hint">Sivu on salattu (<span id="pid"></span>).</p>
+  ${hasPbkdf ? `<input id="pw" type="password" autocomplete="current-password" placeholder="Salasana" />
+  <button type="button" id="go">Avaa salasanalla</button>` : ''}
+  ${hasPrf ? `${hasPbkdf ? '<p class="sep">tai</p>' : ''}
+  <button type="button" id="go-prf">Avaa passkeyllä (WebAuthn PRF)</button>` : ''}
   <p id="status" class="hint"></p>
   <script>
 (function () {
@@ -128,6 +145,9 @@ function buildLoader({ pageId, share1B64, ivB64, cipherB64, entries }) {
     out.set(pageBytes, randomSaltU8.length);
     return out;
   }
+  function prfSaltForPage(pageId) {
+    return new TextEncoder().encode("circle-prf:v1:" + pageId);
+  }
 
   async function deriveHash(password, saltU8, pageId) {
     var pbkdf2Salt = buildPbkdf2Salt(saltU8, pageId);
@@ -140,47 +160,108 @@ function buildLoader({ pageId, share1B64, ivB64, cipherB64, entries }) {
     return new Uint8Array(bits);
   }
 
-  async function tryUnlock(password) {
+  async function tryDecryptWithHash(hashU8) {
     var share1 = b64ToU8(SHARE1);
     var iv = b64ToU8(IV);
     var cipher = b64ToU8(CIPHER);
     for (var i = 0; i < ENTRIES.length; i++) {
       var e = ENTRIES[i];
-      var salt = b64ToU8(e.salt);
       var mask = b64ToU8(e.mask);
-      var hash = await deriveHash(password, salt, PAGE_ID);
-      if (hash.length !== mask.length) continue;
-      var share2 = xorU8(hash, mask);
+      if (hashU8.length !== mask.length) continue;
+      var share2 = xorU8(hashU8, mask);
       var K = xorU8(share1, share2);
       try {
         var key = await crypto.subtle.importKey("raw", K, { name: "AES-GCM" }, false, ["decrypt"]);
         var plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, cipher);
         return new TextDecoder().decode(plain);
-      } catch (err) { /* next entry */ }
+      } catch (err) { /* next */ }
     }
     return null;
   }
 
-  document.getElementById("go").addEventListener("click", function () {
-    var status = document.getElementById("status");
-    var pw = document.getElementById("pw").value;
-    status.className = "hint";
-    status.textContent = "Avataan…";
-    if (!pw) { status.textContent = "Syötä salasana."; status.className = "hint err"; return; }
-    tryUnlock(pw).then(function (html) {
-      if (!html) {
-        status.textContent = "Virheellinen salasana tai vioittunut data.";
-        status.className = "hint err";
-        return;
+  async function tryUnlockPassword(password) {
+    for (var i = 0; i < ENTRIES.length; i++) {
+      var e = ENTRIES[i];
+      if (e.alg && e.alg !== "PBKDF2-SHA256") continue;
+      if (!e.salt) continue;
+      var salt = b64ToU8(e.salt);
+      var hash = await deriveHash(password, salt, PAGE_ID);
+      var html = await tryDecryptWithHash(hash);
+      if (html) return html;
+    }
+    return null;
+  }
+
+  async function tryUnlockPrf() {
+    if (!window.PublicKeyCredential) throw new Error("Selain ei tue WebAuthn");
+    var salt = prfSaltForPage(PAGE_ID);
+    var challenge = crypto.getRandomValues(new Uint8Array(32));
+    var cred = await navigator.credentials.get({
+      publicKey: {
+        challenge: challenge.buffer,
+        rpId: location.hostname,
+        userVerification: "preferred",
+        timeout: 60000,
+        extensions: { prf: { eval: { first: salt } } }
       }
-      document.open();
-      document.write(html);
-      document.close();
-    }).catch(function () {
-      status.textContent = "Purku epäonnistui.";
-      status.className = "hint err";
     });
-  });
+    if (!cred) return null;
+    var ext = cred.getClientExtensionResults();
+    if (!ext || !ext.prf || !ext.prf.results || !ext.prf.results.first) {
+      throw new Error("PRF-tulos puuttuu (authenticator ei tue tai ei palauttanut)");
+    }
+    var prfHash = new Uint8Array(ext.prf.results.first);
+    return tryDecryptWithHash(prfHash);
+  }
+
+  function showHtml(html) {
+    document.open();
+    document.write(html);
+    document.close();
+  }
+
+  var goBtn = document.getElementById("go");
+  if (goBtn) {
+    goBtn.addEventListener("click", function () {
+      var status = document.getElementById("status");
+      var pwEl = document.getElementById("pw");
+      var pw = pwEl ? pwEl.value : "";
+      status.className = "hint";
+      status.textContent = "Avataan…";
+      if (!pw) { status.textContent = "Syötä salasana."; status.className = "hint err"; return; }
+      tryUnlockPassword(pw).then(function (html) {
+        if (!html) {
+          status.textContent = "Virheellinen salasana tai vioittunut data.";
+          status.className = "hint err";
+          return;
+        }
+        showHtml(html);
+      }).catch(function () {
+        status.textContent = "Purku epäonnistui.";
+        status.className = "hint err";
+      });
+    });
+  }
+
+  var prfBtn = document.getElementById("go-prf");
+  if (prfBtn) {
+    prfBtn.addEventListener("click", function () {
+      var status = document.getElementById("status");
+      status.className = "hint";
+      status.textContent = "Odota passkey-vahvistusta…";
+      tryUnlockPrf().then(function (html) {
+        if (!html) {
+          status.textContent = "Passkey ei avannut sivua (väärä credential tai data).";
+          status.className = "hint err";
+          return;
+        }
+        showHtml(html);
+      }).catch(function (e) {
+        status.textContent = "PRF-virhe: " + (e && e.message ? e.message : e);
+        status.className = "hint err";
+      });
+    });
+  }
 })();
   </script>
 </body>
@@ -214,14 +295,16 @@ function main() {
   const cipherFull = Buffer.concat([encBody, tag]);
 
   const entries = enrolls.map((e) => {
-    if (e.hash.length !== 32) throw new Error('hash must be 32 bytes: ' + e.file);
-    // Verify hash matches password-unknown path: we trust enroll file was made with same pageId
     const mask = xorBuf(e.hash, share2);
-    return {
-      salt: b64(e.salt),
+    const entry = {
+      alg: e.alg,
       mask: b64(mask),
       label: e.label
     };
+    if (e.alg === 'PBKDF2-SHA256') {
+      entry.salt = b64(e.salt);
+    }
+    return entry;
   });
 
   fs.mkdirSync(args.outDir, { recursive: true });
@@ -238,6 +321,27 @@ function main() {
     'User-agent: *\nDisallow: /\n',
     'utf8'
   );
+
+  // Copy public enrollment page into dist/ so it is served from the same origin.
+  // Looks for enroll.html in project root or assets/.
+  const enrollCandidates = [
+    path.join(process.cwd(), 'enroll.html'),
+    path.join(process.cwd(), 'assets', 'enroll.html'),
+    path.resolve(path.dirname(args.content || '.'), '..', 'enroll.html'),
+  ];
+  let enrollCopied = false;
+  for (const src of enrollCandidates) {
+    if (fs.existsSync(src) && fs.statSync(src).isFile()) {
+      const dest = path.join(args.outDir, 'enroll.html');
+      fs.copyFileSync(src, dest);
+      console.log('Copied public enroll page →', dest);
+      enrollCopied = true;
+      break;
+    }
+  }
+  if (!enrollCopied) {
+    console.log('Note: no enroll.html found in project root or assets/ (optional)');
+  }
 
   console.log('pageId:', pageId);
   console.log('Wrote', path.join(args.outDir, 'index.html'));
