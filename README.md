@@ -1,10 +1,10 @@
 # hello-circle
 
-Public **example** of a small-circle gated static page, built with [`@kummahiih/private-circle`](https://www.npmjs.com/package/@kummahiih/private-circle).
+Public **example** of a small-circle gated static page, built with [`@kummahiih/private-circle`](https://github.com/kummahiih/private-circle) and enroll assets from [`@kummahiih/circle-enroll`](https://github.com/kummahiih/circle-enroll).
 
 - **Live demo:** https://hello-circle-demo.vercel.app/
 - Clear HTML: `content/index-plaintext.html` (in git for learning).
-- **Vercel serves only `dist/`**, encrypted at build time by the npm package.
+- **Vercel serves only `dist/`**, encrypted at build time. Enroll UI is copied from `@kummahiih/circle-enroll`.
 - Strict CSP: external `gate.js` / `gate.css` + `gate-config.json` (no inline scripts).
 
 ## Demo passwords
@@ -16,15 +16,15 @@ Public **example** of a small-circle gated static page, built with [`@kummahiih/
 
 Intentionally public for the demo. Do not reuse for real secrets.
 
-## Use the npm package in another project
+## Use the packages in another project
 
 ```bash
-npm i -D @kummahiih/private-circle
+npm i -D @kummahiih/private-circle @kummahiih/circle-enroll
 
 # scaffold (optional)
 npx private-circle init
 
-# encrypt → dist/
+# encrypt → dist/ (also copies enroll assets)
 npx private-circle encrypt \
   --page-id my-site \
   --content content/index-plaintext.html \
@@ -37,9 +37,10 @@ Or in `package.json`:
 ```json
 {
   "scripts": {
-    "build": "private-circle encrypt --page-id my-site --content content/index.html --hashes hashes --out dist"
+    "build": "npx circle-enroll copy --out dist && private-circle encrypt --page-id my-site --content content/index.html --hashes hashes --out dist"
   },
   "devDependencies": {
+    "@kummahiih/circle-enroll": "^0.1.0",
     "@kummahiih/private-circle": "^0.1.0"
   }
 }
@@ -47,14 +48,13 @@ Or in `package.json`:
 
 Vercel: set **Build Command** to `npm run build` and **Output Directory** to `dist` (see this repo’s `vercel.json`).
 
-Docs: [npm package](https://www.npmjs.com/package/@kummahiih/private-circle) · [source](https://github.com/kummahiih/private-circle)
-
 ## Local build (this repo)
 
 ```bash
 npm install
 npm run build
 # open dist/index.html — try alice / demo-alice-2026
+# enroll: dist/enroll.html
 ```
 
 ## Deploy (Vercel)
@@ -67,7 +67,7 @@ npm run build
 
 ## CI
 
-`.github/workflows/encrypt-check.yml` installs `@kummahiih/private-circle`, runs encrypt, and asserts no plaintext and no inline scripts in `dist/`.
+`.github/workflows/encrypt-check.yml` installs the packages, runs encrypt, and asserts no plaintext and no inline scripts in `dist/`.
 
 ## Security notes
 
@@ -77,6 +77,6 @@ npm run build
 
 ## Related
 
-- https://www.npmjs.com/package/@kummahiih/private-circle
 - https://github.com/kummahiih/private-circle
+- https://github.com/kummahiih/circle-enroll
 - ADR: `docs/ADR-001-hello-circle.md`

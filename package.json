@@ -3,11 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "private-circle encrypt --page-id hello-circle --content content/index-plaintext.html --hashes hashes --out dist",
+    "build": "npx circle-enroll copy --out dist && private-circle encrypt --page-id hello-circle --content content/index-plaintext.html --hashes hashes --out dist",
     "encrypt": "npm run build"
   },
   "devDependencies": {
-    "@kummahiih/private-circle": "^0.1.0"
+    "@kummahiih/circle-enroll": "github:kummahiih/circle-enroll#main",
+    "@kummahiih/private-circle": "github:kummahiih/private-circle#main"
   },
   "engines": {
     "node": ">=18"
