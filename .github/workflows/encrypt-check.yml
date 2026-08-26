@@ -16,25 +16,33 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install
+        run: npm install
 
       - name: Encrypt page
-        run: |
-          node scripts/encrypt-page.mjs \
-            --page-id hello-circle \
-            --content content/index-plaintext.html \
-            --hashes hashes \
-            --out dist
+        run: npm run build
 
-      - name: Assert plaintext not in dist
+      - name: Assert dist layout (strict CSP)
         run: |
           test -f dist/index.html
           test -f dist/robots.txt
+          test -f dist/gate.js
+          test -f dist/gate.css
+          test -f dist/gate-config.json
           if grep -q "Hello, circle" dist/index.html; then
             echo "ERROR: plaintext marker found inside dist/index.html"
             exit 1
           fi
+          if grep -q "<script>" dist/index.html; then
+            echo "ERROR: inline script in index.html (breaks strict CSP)"
+            exit 1
+          fi
+          grep -q "gate.js" dist/index.html
           grep -q "Kirjaudu" dist/index.html
-          echo "OK: dist is loader-only ciphertext bundle"
+          node -e "const c=require('./dist/gate-config.json'); if(c.pageId!=='hello-circle') process.exit(1)"
+          echo "OK: CSP-safe loader + gate-config.json"
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
