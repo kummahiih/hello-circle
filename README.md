@@ -67,13 +67,17 @@ npm run build
 
 ## CI
 
-`.github/workflows/encrypt-check.yml` installs the packages, runs encrypt, and asserts no plaintext and no inline scripts in `dist/`.
+`.github/workflows/encrypt-check.yml` installs the packages, runs encrypt, and asserts:
+
+- no plaintext markers in `dist/`
+- no inline scripts
+- **no `hashes/` directory under `dist/`**
 
 ## Security notes
 
 - Client-side gate only: ciphertext + masks are downloadable.
-- Demo `hashes/` are public on purpose.
-- Real circle: private hashes, same-origin `enroll.html`, strong passwords or WebAuthn PRF.
+- Demo `hashes/` are public on purpose (labeled demo passwords).
+- **Real circle:** keep enroll JSON private; never commit real hashes or ship them with `dist/`; same-origin `enroll.html`; strong passwords or WebAuthn PRF.
 
 ## Related
 
