@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node scripts/encrypt-page.mjs --page-id hello-circle --content content/index-plaintext.html --hashes hashes --out dist",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
@@ -13,7 +13,7 @@
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
+          "value": "default-src 'none'; base-uri 'none'; form-action 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'none'; font-src 'none'; object-src 'none'; frame-ancestors 'none'"
         }
       ]
     }
