@@ -3,10 +3,9 @@
 Public **example** of a small-circle gated static page, built with [`@kummahiih/private-circle`](https://www.npmjs.com/package/@kummahiih/private-circle).
 
 - **Live demo:** https://hello-circle-demo.vercel.app/
-- Clear HTML lives in `content/index-plaintext.html` (in git for learning).
-- **Vercel serves only `dist/`**, produced by encrypting at build time.
-- Loader uses **external** `gate.js` / `gate.css` + `gate-config.json` (strict CSP, no inline scripts).
-- Two demo users (passwords below).
+- Clear HTML: `content/index-plaintext.html` (in git for learning).
+- **Vercel serves only `dist/`**, encrypted at build time by the npm package.
+- Strict CSP: external `gate.js` / `gate.css` + `gate-config.json` (no inline scripts).
 
 ## Demo passwords
 
@@ -15,35 +14,66 @@ Public **example** of a small-circle gated static page, built with [`@kummahiih/
 | alice | `demo-alice-2026` | `hello-circle` |
 | bob   | `demo-bob-2026`   | `hello-circle` |
 
-These are **intentionally public** for the demo. Do not reuse them for real secrets.
+Intentionally public for the demo. Do not reuse for real secrets.
 
-## Local build
+## Use the npm package in another project
+
+```bash
+npm i -D @kummahiih/private-circle
+
+# scaffold (optional)
+npx private-circle init
+
+# encrypt → dist/
+npx private-circle encrypt \
+  --page-id my-site \
+  --content content/index-plaintext.html \
+  --hashes hashes \
+  --out dist
+```
+
+Or in `package.json`:
+
+```json
+{
+  "scripts": {
+    "build": "private-circle encrypt --page-id my-site --content content/index.html --hashes hashes --out dist"
+  },
+  "devDependencies": {
+    "@kummahiih/private-circle": "^0.1.0"
+  }
+}
+```
+
+Vercel: set **Build Command** to `npm run build` and **Output Directory** to `dist` (see this repo’s `vercel.json`).
+
+Docs: [npm package](https://www.npmjs.com/package/@kummahiih/private-circle) · [source](https://github.com/kummahiih/private-circle)
+
+## Local build (this repo)
 
 ```bash
 npm install
 npm run build
+# open dist/index.html — try alice / demo-alice-2026
 ```
-
-Open `dist/index.html` in a browser, enter a demo password.
 
 ## Deploy (Vercel)
 
 1. Import this repo.
-2. **Root directory:** repository root (default).
-3. Build settings come from `vercel.json`:
-   - **Build Command:** `npm run build` → `@kummahiih/private-circle` encrypt → `dist/`
+2. Build settings from `vercel.json`:
+   - **Build Command:** `npm run build`
    - **Output Directory:** `dist`
-4. CSP headers omit `'unsafe-inline'` for scripts (`script-src 'self'`).
+3. CSP: `script-src 'self'` (no `'unsafe-inline'` for scripts).
 
-## GitHub Action
+## CI
 
-`.github/workflows/encrypt-check.yml` installs the package, encrypts, and checks that `dist/` has no plaintext and no inline scripts.
+`.github/workflows/encrypt-check.yml` installs `@kummahiih/private-circle`, runs encrypt, and asserts no plaintext and no inline scripts in `dist/`.
 
 ## Security notes
 
-- Client-side gate only: ciphertext + masks are downloadable; weak passwords can be guessed offline.
-- Demo hashes in `hashes/` are public on purpose.
-- For a real circle: keep `hashes/` private, enroll via same-origin `enroll.html`, strong unique passwords or WebAuthn PRF.
+- Client-side gate only: ciphertext + masks are downloadable.
+- Demo `hashes/` are public on purpose.
+- Real circle: private hashes, same-origin `enroll.html`, strong passwords or WebAuthn PRF.
 
 ## Related
 
