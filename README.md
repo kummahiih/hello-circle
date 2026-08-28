@@ -7,7 +7,7 @@ Public **example** of a small-circle gated static page, built with [`@kummahiih/
 - **Vercel serves only `dist/`**, encrypted at build time. Enroll UI is copied from `@kummahiih/circle-enroll`.
 - Strict CSP: external `gate.js` / `gate.css` + `gate-config.json` (no inline scripts).
 
-> **AI Disclosure**: This project has been developed with assistance from AI tools. See [`docs/AI_DISCLOSURE.md`](docs/AI_DISCLOSURE.md) for full transparency regarding the development process and compliance with the EU AI Act Article 50(2).
+> **AI Disclosure**: This project has been developed with assistance from AI tools. See [`docs/AI_DISCLOSURE.md`](docs/AI_DISCLOSURE.md) for full transparency regarding the development process.
 
 ## Demo passwords
 
