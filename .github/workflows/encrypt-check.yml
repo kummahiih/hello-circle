@@ -22,9 +22,7 @@ jobs:
         run: npm ci
 
       - name: Show package versions
-        run: |
-          node -e "console.log('private-circle', require('@kummahiih/private-circle/package.json').version)"
-          node -e "console.log('circle-enroll', require('@kummahiih/circle-enroll/package.json').version)"
+        run: npm ls --depth=0
 
       - name: Encrypt page
         run: npm run build
