@@ -7,8 +7,8 @@
     "encrypt": "npm run build"
   },
   "devDependencies": {
-    "@kummahiih/circle-enroll": "github:kummahiih/circle-enroll#main",
-    "@kummahiih/private-circle": "github:kummahiih/private-circle#main"
+    "@kummahiih/circle-enroll": "^0.1.1",
+    "@kummahiih/private-circle": "^0.3.1"
   },
   "engines": {
     "node": ">=18"
