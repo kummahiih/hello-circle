@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npx circle-enroll copy --out dist && private-circle encrypt --page-id hello-circle --content content/index-plaintext.html --hashes hashes --out dist",
-    "encrypt": "npm run build"
+    "build": "circle-enroll copy --out dist && private-circle encrypt --page-id hello-circle --content content/index-plaintext.html --hashes hashes --out dist",
+    "encrypt": "npm run build",
+    "test:unlock": "node test/unlock-demo.mjs"
   },
   "devDependencies": {
     "@kummahiih/circle-enroll": "^0.1.1",

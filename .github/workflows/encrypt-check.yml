@@ -19,7 +19,12 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Install
-        run: npm install
+        run: npm ci
+
+      - name: Show package versions
+        run: |
+          node -e "console.log('private-circle', require('@kummahiih/private-circle/package.json').version)"
+          node -e "console.log('circle-enroll', require('@kummahiih/circle-enroll/package.json').version)"
 
       - name: Encrypt page
         run: npm run build
@@ -31,6 +36,7 @@ jobs:
           test -f dist/gate.js
           test -f dist/gate.css
           test -f dist/gate-config.json
+          test -f dist/enroll.html
           if [ -d dist/hashes ]; then
             echo "ERROR: hashes/ must not appear under dist/"
             exit 1
@@ -49,8 +55,12 @@ jobs:
           fi
           grep -q "gate.js" dist/index.html
           grep -q "Kirjaudu" dist/index.html
+          grep -q "blob:" dist/index.html
           node -e "const c=require('./dist/gate-config.json'); if(c.pageId!=='hello-circle') process.exit(1)"
           echo "OK: CSP-safe loader + no hashes in dist"
+
+      - name: Demo passwords unlock ciphertext
+        run: npm run test:unlock
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
