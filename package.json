@@ -8,8 +8,8 @@
     "test:unlock": "node test/unlock-demo.mjs"
   },
   "devDependencies": {
-    "@kummahiih/circle-enroll": "^0.1.1",
-    "@kummahiih/private-circle": "^0.3.2"
+    "@kummahiih/circle-enroll": "^0.1.2",
+    "@kummahiih/private-circle": "^0.3.3"
   },
   "engines": {
     "node": ">=18"

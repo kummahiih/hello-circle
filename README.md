@@ -4,8 +4,9 @@ Public **example** of a small-circle gated static page, built with [`@kummahiih/
 
 - **Live demo:** https://hello-circle-demo.vercel.app/
 - **Enroll (password or passkey):** https://hello-circle-demo.vercel.app/enroll
+- `pageId` on that enroll page is **locked to `hello-circle`** after `private-circle encrypt` stamps `dist/enroll.html`. No `?page=` needed. Do not fork enroll assets in this repo.
 - Clear HTML: `content/index-plaintext.html` (in git for learning).
-- **Vercel serves only `dist/`**, encrypted at build time. Enroll UI is copied from `@kummahiih/circle-enroll`.
+- **Vercel serves only `dist/`**, encrypted at build time. Enroll UI is copied from `@kummahiih/circle-enroll` then stamped.
 - Strict CSP: external `gate.js` / `gate.css` + `gate-config.json` (no inline scripts).
 
 > **AI Disclosure**: This project has been developed with assistance from AI tools. See [`docs/AI_DISCLOSURE.md`](docs/AI_DISCLOSURE.md) for full transparency regarding the development process.
@@ -30,7 +31,7 @@ npm i -D @kummahiih/private-circle @kummahiih/circle-enroll
 # scaffold (optional)
 npx private-circle init
 
-# encrypt → dist/ (also copies enroll assets)
+# encrypt → dist/ (also copies enroll assets and locks pageId)
 npx private-circle encrypt \
   --page-id my-site \
   --content content/index-plaintext.html \
@@ -46,8 +47,8 @@ Or in `package.json`:
     "build": "npx circle-enroll copy --out dist && private-circle encrypt --page-id my-site --content content/index.html --hashes hashes --out dist"
   },
   "devDependencies": {
-    "@kummahiih/circle-enroll": "^0.1.0",
-    "@kummahiih/private-circle": "^0.1.0"
+    "@kummahiih/circle-enroll": "^0.1.2",
+    "@kummahiih/private-circle": "^0.3.3"
   }
 }
 ```
@@ -60,7 +61,7 @@ Vercel: set **Build Command** to `npm run build` and **Output Directory** to `di
 npm install
 npm run build
 # open dist/index.html — try alice / demo-alice-2026
-# enroll: dist/enroll.html
+# enroll: dist/enroll.html (pageId locked to hello-circle)
 ```
 
 ## Deploy (Vercel)
@@ -78,6 +79,8 @@ npm run build
 - no plaintext markers in `dist/`
 - no inline scripts
 - **no `hashes/` directory under `dist/`**
+
+Needs `@kummahiih/circle-enroll@0.1.2` and `@kummahiih/private-circle@0.3.3` on npm for the lock-pageId stamp.
 
 ## Security notes
 
