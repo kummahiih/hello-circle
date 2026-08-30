@@ -9,14 +9,17 @@ Public **example** of a small-circle gated static page, built with [`@kummahiih/
 
 > **AI Disclosure**: This project has been developed with assistance from AI tools. See [`docs/AI_DISCLOSURE.md`](docs/AI_DISCLOSURE.md) for full transparency regarding the development process.
 
-## Demo passwords
+## Demo unlock
 
-| User  | Password          | pageId         |
-|-------|-------------------|----------------|
-| alice | `demo-alice-2026` | `hello-circle` |
-| bob   | `demo-bob-2026`   | `hello-circle` |
+| User    | Method                         | Secret / note |
+|---------|--------------------------------|---------------|
+| alice   | password                       | `demo-alice-2026` |
+| bob     | password                       | `demo-bob-2026` |
+| passkey | WebAuthn PRF (`alg: WebAuthn-PRF`) | Enrolled on **https://hello-circle-demo.vercel.app/** (`rpId` must match) |
 
-Intentionally public for the demo. Do not reuse for real secrets.
+Passwords are intentionally public for the demo. Do not reuse them for real secrets.
+
+The login page shows **Avaa passkeyllä (WebAuthn PRF)** when `hashes/` contains a `WebAuthn-PRF` enroll file. That button only works on the same origin the passkey was created on (`hello-circle-demo.vercel.app`). Preview URLs such as `hello-circle-topaz.vercel.app` will not accept that credential.
 
 ## Use the packages in another project
 

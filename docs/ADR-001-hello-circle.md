@@ -11,7 +11,7 @@ Tarvitaan **julkinen** esimerkkirepo, joka näyttää miten:
 
 1. Selväkielinen HTML pidetään erillään deploymentista.
 2. Build / CI salaa sivun (AES-GCM + page-scoped PBKDF2-maskit).
-3. Kaksi esimerkkikäyttäjää voi avata loaderin salasanalla.
+3. Kaksi esimerkkikäyttäjää voi avata loaderin salasanalla, ja yksi passkey (WebAuthn PRF) samalla pageId:llä.
 
 Enroll-formaatti sama kuin `circle-enroll` / `private-circle-page`.
 
@@ -22,7 +22,7 @@ Enroll-formaatti sama kuin `circle-enroll` / `private-circle-page`.
 | Osa | Valinta |
 |-----|---------|
 | Selväkielinen sivu | `content/index-plaintext.html` (gittissä oppimista varten) |
-| Käyttäjät | `hashes/alice.json`, `hashes/bob.json` (julkiset demosalasanat README:ssä) |
+| Käyttäjät | `hashes/alice.json`, `hashes/bob.json` (julkiset demosalasanat) + `hashes/enroll-prf-hello-circle-*.json` (WebAuthn PRF) |
 | pageId | `hello-circle` |
 | Salaus | `scripts/encrypt-page.mjs` → `dist/` (loader + ciphertext + masks) |
 | Vercel | `buildCommand` = encrypt, `outputDirectory` = `dist` |
@@ -37,6 +37,7 @@ Esimerkkiopetus: lukija näkee lähteen. Deploymentin **Output Directory** on va
 
 - alice / `demo-alice-2026`
 - bob / `demo-bob-2026`
+- passkey / WebAuthn PRF (`rpId`: `hello-circle-demo.vercel.app`)
 
 ---
 

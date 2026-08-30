@@ -1,0 +1,10 @@
+{
+  "v": 1,
+  "pageId": "hello-circle",
+  "alg": "WebAuthn-PRF",
+  "hashBytes": 32,
+  "hash": "91Iv/48EyUhKgyjfgsVLV5T/T4hfdt7w3WqoGa4pbJ0=",
+  "created": "2026-08-30T23:25:49.377Z",
+  "rpId": "hello-circle-demo.vercel.app",
+  "label": "passkey"
+}

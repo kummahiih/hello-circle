@@ -53,6 +53,13 @@ if (cfg.pageId !== 'hello-circle') {
   process.exit(1);
 }
 
+const prf = (cfg.entries || []).filter((e) => e.alg === 'WebAuthn-PRF');
+if (!prf.length) {
+  console.error('FAIL expected at least one WebAuthn-PRF entry in gate-config.json');
+  process.exit(1);
+}
+console.log('OK WebAuthn-PRF entries', prf.length);
+
 let failed = false;
 for (const [label, pw] of PASSWORDS) {
   const html = await unlock(cfg, pw);

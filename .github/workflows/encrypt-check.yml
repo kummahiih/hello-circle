@@ -54,8 +54,9 @@ jobs:
           grep -q "gate.js" dist/index.html
           grep -q "Kirjaudu" dist/index.html
           grep -q "blob:" dist/index.html
-          node -e "const c=require('./dist/gate-config.json'); if(c.pageId!=='hello-circle') process.exit(1)"
-          echo "OK: CSP-safe loader + no hashes in dist"
+          node -e "const c=require('./dist/gate-config.json'); if(c.pageId!=='hello-circle') process.exit(1); if(!(c.entries||[]).some(e=>e.alg==='WebAuthn-PRF')) { console.error('missing WebAuthn-PRF entry'); process.exit(1); }"
+          grep -q "go-prf" dist/index.html
+          echo "OK: CSP-safe loader + no hashes in dist + passkey entry"
 
       - name: Demo passwords unlock ciphertext
         run: npm run test:unlock
