@@ -3,6 +3,7 @@
 Public **example** of a small-circle gated static page, built with [`@kummahiih/private-circle`](https://github.com/kummahiih/private-circle) and enroll assets from [`@kummahiih/circle-enroll`](https://github.com/kummahiih/circle-enroll).
 
 - **Live demo:** https://hello-circle-demo.vercel.app/
+- **Enroll (password or passkey):** https://hello-circle-demo.vercel.app/enroll
 - Clear HTML: `content/index-plaintext.html` (in git for learning).
 - **Vercel serves only `dist/`**, encrypted at build time. Enroll UI is copied from `@kummahiih/circle-enroll`.
 - Strict CSP: external `gate.js` / `gate.css` + `gate-config.json` (no inline scripts).
