@@ -64,5 +64,6 @@ Gate-sivun HTTP-CSP sallii lisäksi `blob:` (multifile-purku). Enroll ei tarvits
 
 - https://github.com/kummahiih/circle-enroll  
 - https://github.com/kummahiih/private-circle  
+- Threat model: `docs/THREAT_MODEL.md`  
 - Skill: `private-circle-page`
 ---

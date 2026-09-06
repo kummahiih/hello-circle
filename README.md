@@ -90,9 +90,11 @@ Needs `@kummahiih/circle-enroll@0.1.2` and `@kummahiih/private-circle@0.3.3` on 
 - Client-side gate only: ciphertext + masks are downloadable.
 - Demo `hashes/` are public on purpose (labeled demo passwords).
 - **Real circle:** keep enroll JSON private; never commit real hashes or ship them with `dist/`; same-origin `enroll.html`; strong passwords or WebAuthn PRF.
+- Threat model: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
 ## Related
 
 - https://github.com/kummahiih/private-circle
 - https://github.com/kummahiih/circle-enroll
 - ADR: `docs/ADR-001-hello-circle.md`
+- Threat model: `docs/THREAT_MODEL.md`
