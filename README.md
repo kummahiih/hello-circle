@@ -8,6 +8,7 @@ Public **example** of a small-circle gated static page, built with [`@kummahiih/
 - Clear HTML: `content/index-plaintext.html` (in git for learning).
 - **Vercel serves only `dist/`**, encrypted at build time. Enroll UI is copied from `@kummahiih/circle-enroll` then stamped.
 - Strict CSP: external `gate.js` / `gate.css` + `gate-config.json` (no inline scripts).
+- Enroll CSP: `script-src 'self'; style-src 'self'` via `enroll.css` (no `'unsafe-inline'`).
 
 > **AI Disclosure**: This project has been developed with assistance from AI tools. See [`docs/AI_DISCLOSURE.md`](docs/AI_DISCLOSURE.md) for full transparency regarding the development process.
 
@@ -70,7 +71,8 @@ npm run build
 2. Build settings from `vercel.json`:
    - **Build Command:** `npm run build`
    - **Output Directory:** `dist`
-3. CSP: `script-src 'self'` (no `'unsafe-inline'` for scripts).
+3. CSP: `script-src 'self'` and `style-src 'self'` (no `'unsafe-inline'`).
+   Gate also allows `blob:` for decrypted multifile assets.
 
 ## CI
 
@@ -78,6 +80,7 @@ npm run build
 
 - no plaintext markers in `dist/`
 - no inline scripts
+- no inline enroll styles / no `'unsafe-inline'`
 - **no `hashes/` directory under `dist/`**
 
 Needs `@kummahiih/circle-enroll@0.1.2` and `@kummahiih/private-circle@0.3.3` on npm for the lock-pageId stamp.
