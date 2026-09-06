@@ -23,6 +23,44 @@
     return String(s || "").trim().toLowerCase().replace(/\s+/g, "-");
   }
 
+  function isLockFlag(v) {
+    if (v == null) return false;
+    v = String(v).trim();
+    if (!v || v === "0" || v === "false" || v === "no") return false;
+    return true;
+  }
+
+  function applyPageIdLock() {
+    var root = document.documentElement;
+    var lockAttr = root.getAttribute("data-lock-page-id");
+    var stamped = normalizePageId(root.getAttribute("data-page-id") || "");
+    var locked = isLockFlag(lockAttr) || !!stamped;
+    if (lockAttr && lockAttr !== "1" && lockAttr !== "true" && lockAttr !== "yes") {
+      var fromLock = normalizePageId(lockAttr);
+      if (fromLock && fromLock !== "1") stamped = stamped || fromLock;
+    }
+    var params = new URLSearchParams(window.location.search);
+    var fromQuery = params.get("page") || params.get("pageId") || "";
+    var pageId = stamped || normalizePageId(fromQuery);
+    var input = $("pageId");
+    if (input && pageId) input.value = pageId;
+    else if (input && fromQuery) input.value = fromQuery;
+
+    if (locked && (pageId || (input && input.value))) {
+      var shown = pageId || normalizePageId(input.value);
+      if (input) {
+        input.value = shown;
+        input.setAttribute("readonly", "readonly");
+      }
+      var block = $("pageId-block");
+      if (block) block.hidden = true;
+      var fixed = $("pageId-fixed");
+      var disp = $("pageId-display");
+      if (disp) disp.textContent = shown;
+      if (fixed) fixed.hidden = true;
+    }
+  }
+
   function buildPbkdf2Salt(randomSaltU8, pageId) {
     var pageBytes = new TextEncoder().encode(pageId);
     var out = new Uint8Array(randomSaltU8.length + pageBytes.length);
@@ -59,10 +97,10 @@
     enableAfterMake(true);
   }
 
-  var params = new URLSearchParams(window.location.search);
-  if (params.get("page") || params.get("pageId")) {
-    $("pageId").value = params.get("page") || params.get("pageId");
-  }
+  function getPayload() { return lastPayload; }
+  function getFilename() { return lastFilename; }
+
+  applyPageIdLock();
   if ($("cur-host")) $("cur-host").textContent = location.hostname || "(unknown)";
 
   $("btn-make").addEventListener("click", function () {
@@ -150,6 +188,6 @@
 
   global.CircleEnroll = {
     $, setStatus, b64, normalizePageId, prfSaltForPage,
-    setPayload, makeFilename, enableAfterMake
+    setPayload, makeFilename, enableAfterMake, getPayload, applyPageIdLock
   };
 })(window);
